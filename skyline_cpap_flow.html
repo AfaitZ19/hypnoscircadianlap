@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skyline CPAP Platform — System Flow</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0f1a;
+    --surface: #111827;
+    --surface2: #1a2332;
+    --border: #1e3a5f;
+    --accent: #0ea5e9;
+    --accent2: #38bdf8;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --dim: #334155;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 32px 24px 80px;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(14,165,233,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(14,165,233,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .header-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .header h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 6px;
+  }
+
+  .header p {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* Phase label */
+  .phase-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .phase-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Section title */
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f1f5f9;
+    margin-bottom: 16px;
+  }
+
+  /* Flow blocks */
+  .flow-section {
+    margin-bottom: 40px;
+  }
+
+  .flow-grid {
+    display: grid;
+    gap: 12px;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    position: relative;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    flex: 1;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .card-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  .card-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: #f1f5f9;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .card-body {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+
+  .card-body ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .card-body li {
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .card-body li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  /* Arrow connector */
+  .arrow-down {
+    display: flex;
+    justify-content: center;
+    padding: 6px 0;
+    color: var(--dim);
+    font-size: 18px;
+    position: relative;
+  }
+
+  .arrow-down::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 50%;
+    left: 50%;
+    width: 1px;
+    background: var(--border);
+    transform: translateX(-50%);
+  }
+
+  .arrow-right {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: var(--dim);
+    font-size: 16px;
+  }
+
+  /* Badge / pill */
+  .badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+    margin-top: 6px;
+    margin-right: 4px;
+  }
+
+  .badge-blue { background: rgba(14,165,233,0.15); color: var(--accent2); border: 1px solid rgba(14,165,233,0.3); }
+  .badge-green { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-purple { background: rgba(139,92,246,0.15); color: var(--purple); border: 1px solid rgba(139,92,246,0.3); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Color variants for card icons */
+  .icon-blue { background: rgba(14,165,233,0.15); }
+  .icon-green { background: rgba(16,185,129,0.15); }
+  .icon-yellow { background: rgba(245,158,11,0.15); }
+  .icon-purple { background: rgba(139,92,246,0.15); }
+  .icon-red { background: rgba(239,68,68,0.15); }
+
+  /* Horizontal flow for actors */
+  .actor-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .actor-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .actor-emoji { font-size: 24px; margin-bottom: 6px; }
+  .actor-name { font-weight: 600; font-size: 13px; color: #f1f5f9; margin-bottom: 4px; }
+  .actor-desc { font-size: 11px; color: var(--muted); }
+
+  /* Timeline / phase indicator */
+  .phase-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    overflow-x: auto;
+  }
+
+  .phase-item {
+    flex: 1;
+    min-width: 120px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    position: relative;
+  }
+
+  .phase-item.active {
+    border-color: var(--accent);
+    background: rgba(14,165,233,0.05);
+  }
+
+  .phase-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .phase-name {
+    font-weight: 600;
+    font-size: 12px;
+    color: #f1f5f9;
+    margin-bottom: 4px;
+  }
+
+  .phase-desc {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Data flow diagram */
+  .data-flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 40px;
+  }
+
+  .df-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .df-row:last-child { margin-bottom: 0; }
+
+  .df-node {
+    background: var(--surface2);
+    border: 1px solid var(--dim);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .df-arrow {
+    color: var(--dim);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .df-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+
+  .df-spacer { flex: 1; }
+
+  /* Table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-bottom: 32px;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface2);
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(30,58,95,0.5);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(14,165,233,0.03); }
+
+  .mono { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  /* Warning / note box */
+  .note-box {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .note-box.warn {
+    background: rgba(245,158,11,0.08);
+    border: 1px solid rgba(245,158,11,0.25);
+  }
+
+  .note-box.info {
+    background: rgba(14,165,233,0.08);
+    border: 1px solid rgba(14,165,233,0.25);
+  }
+
+  .note-box.success {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.25);
+  }
+
+  .note-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .note-text { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  .note-text strong { color: var(--text); }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 40px 0;
+  }
+
+  /* Scroll to top */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 40px;
+  }
+
+  .toc-title {
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .toc-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+  }
+
+  .toc-list a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 12px;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    transition: all 0.15s;
+  }
+
+  .toc-list a:hover {
+    background: rgba(14,165,233,0.1);
+    border-color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    .actor-row { grid-template-columns: repeat(2, 1fr); }
+    .phase-bar { flex-direction: column; }
+    body { padding: 20px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-tag">Skyline Medical Co., Ltd. — Internal Architecture Document</div>
+    <h1>CPAP Data Platform — System Flow</h1>
+    <p>ระบบอ่านข้อมูล SD Card + ส่งขึ้น Cloud + Portal สำหรับหมอ / คนไข้ / Skyline</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">สารบัญ</div>
+    <ul class="toc-list">
+      <li><a href="#actors">ผู้ใช้งาน</a></li>
+      <li><a href="#flow">Big Picture Flow</a></li>
+      <li><a href="#bridge">Bridge App</a></li>
+      <li><a href="#parser">SD Card Parser</a></li>
+      <li><a href="#api">Cloud API</a></li>
+      <li><a href="#portal">Web Portal</a></li>
+      <li><a href="#db">Database Schema</a></li>
+      <li><a href="#phases">Build Phases</a></li>
+      <li><a href="#risks">ความเสี่ยง</a></li>
+    </ul>
+  </div>
+
+  <!-- ACTORS -->
+  <div id="actors" class="flow-section">
+    <div class="phase-label">01 — Actors</div>
+    <div class="section-title">ผู้ใช้งานในระบบ</div>
+    <div class="actor-row">
+      <div class="actor-card">
+        <div class="actor-emoji">🏥</div>
+        <div class="actor-name">เจ้าหน้าที่ รพ.</div>
+        <div class="actor-desc">เสียบ SD Card<br>upload ข้อมูลคนไข้</div>
+        <div style="margin-top:8px"><span class="badge badge-yellow">uploader</span></div>
+      </div>
+      <div class="actor-card">
+        <div class="actor-emoji">🧑‍⚕️</div>
+        <div class="actor-name">แพทย์</div>
+        <div class="actor-desc">ดู AHI, pressure,<br>compliance รายคนไข้</div>
+        <div style="margin-top:8px"><span class="badge badge-blue">viewer</span></div>
+      </div>
+      <div class="actor-card">
+        <div class="actor-emoji">😴</div>
+        <div class="actor-name">คนไข้</div>
+        <div class="actor-desc">ดูสรุปตัวเอง<br>ผ่านมือถือ/คอม</div>
+        <div style="margin-top:8px"><span class="badge badge-green">self-view</span></div>
+      </div>
+      <div class="actor-card">
+        <div class="actor-emoji">📊</div>
+        <div class="actor-name">Skyline</div>
+        <div class="actor-desc">ดู dashboard<br>ทุก รพ. รวมกัน</div>
+        <div style="margin-top:8px"><span class="badge badge-purple">admin</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BIG PICTURE FLOW -->
+  <div id="flow" class="flow-section">
+    <div class="phase-label">02 — Big Picture</div>
+    <div class="section-title">Big Picture Flow</div>
+
+    <div class="data-flow">
+      <!-- Row 1: SD Card -->
+      <div class="df-row">
+        <div class="df-node">💾 SD Card (APEX .SAP / Beyond .bin / ...)</div>
+        <div class="df-spacer"></div>
+      </div>
+      <div class="df-row">
+        <div style="width:20px"></div>
+        <div class="df-arrow">↓</div>
+        <div class="df-label">เสียบการ์ดเข้าเครื่อง</div>
+      </div>
+
+      <!-- Row 2: Bridge -->
+      <div class="df-row">
+        <div class="df-node" style="border-color:var(--accent);color:var(--accent2)">⚙️ Bridge App (Windows/Mac — ติดที่เครื่อง)</div>
+        <div class="df-spacer"></div>
+        <div class="df-label">detect การ์ด → parse ไฟล์ → แปลงเป็น JSON</div>
+      </div>
+      <div class="df-row">
+        <div style="width:20px"></div>
+        <div class="df-arrow">↓</div>
+        <div class="df-label">HTTPS POST (JWT auth)</div>
+      </div>
+
+      <!-- Row 3: API -->
+      <div class="df-row">
+        <div class="df-node" style="border-color:var(--green);color:var(--green)">☁️ Skyline Cloud API</div>
+        <div class="df-spacer"></div>
+        <div class="df-label">validate → save → trigger notification</div>
+      </div>
+      <div class="df-row">
+        <div style="width:20px"></div>
+        <div class="df-arrow">↓</div>
+        <div class="df-label">query ตาม role</div>
+      </div>
+
+      <!-- Row 4: Portal -->
+      <div class="df-row">
+        <div class="df-node">🌐 Web Portal</div>
+        <div class="df-spacer"></div>
+      </div>
+      <div class="df-row" style="margin-left:24px;gap:12px;flex-wrap:wrap">
+        <div class="df-node" style="font-size:11px">🧑‍⚕️ Doctor View</div>
+        <div class="df-node" style="font-size:11px">😴 Patient View</div>
+        <div class="df-node" style="font-size:11px">📊 Skyline Dashboard</div>
+        <div class="df-node" style="font-size:11px">🏥 Hospital Admin</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BRIDGE APP -->
+  <div id="bridge" class="flow-section">
+    <div class="phase-label">03 — Bridge App</div>
+    <div class="section-title">Bridge App — ทำงานอย่างไร?</div>
+
+    <div class="note-box info">
+      <div class="note-icon">ℹ️</div>
+      <div class="note-text"><strong>Bridge คืออะไร:</strong> โปรแกรมเล็กๆ (~5–10 MB) ที่ติดตั้งบนเครื่อง Windows/Mac ของเจ้าหน้าที่หรือ Sales ทำหน้าที่ watch SD Card และส่งข้อมูลขึ้น cloud อัตโนมัติ ตัว UI ทั้งหมดยังอยู่บน web browser</div>
+    </div>
+
+    <div class="flow-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-blue">1️⃣</div>
+          <div>
+            <div class="card-title">SD Card Detection</div>
+            <div class="card-sub">auto-detect on insert</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>Bridge รันเป็น background service (startup)</li>
+            <li>ตรวจ drive ใหม่ทุก 2 วินาที</li>
+            <li>เมื่อพบ SD Card → scan หาไฟล์ CPAP ที่รู้จัก</li>
+            <li>แสดง notification: "พบข้อมูล CPAP — กดเพื่อ upload"</li>
+          </ul>
+          <span class="badge badge-blue">Node.js / Electron</span>
+          <span class="badge badge-yellow">chokidar (file watch)</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">↓</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-yellow">2️⃣</div>
+          <div>
+            <div class="card-title">ระบุ Brand & Parser</div>
+            <div class="card-sub">auto-detect device brand</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>ตรวจ folder structure บน SD Card → ระบุแบรนด์</li>
+            <li>APEX: มีโฟลเดอร์ <span class="mono">DATALOG/</span> + ไฟล์ <span class="mono">.SAP</span></li>
+            <li>Beyond: มีโฟลเดอร์ <span class="mono">RECORD/</span> + ไฟล์ <span class="mono">.bin</span></li>
+            <li>ResMed: มีโฟลเดอร์ <span class="mono">SETTINGS/</span> + <span class="mono">STR.edf</span></li>
+            <li>เรียก parser ที่ตรงกัน</li>
+          </ul>
+          <span class="badge badge-green">APEX parser — พร้อมแล้ว</span>
+          <span class="badge badge-yellow">Beyond — ต้อง reverse</span>
+          <span class="badge badge-red">ResMed — ซับซ้อน</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">↓</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-green">3️⃣</div>
+          <div>
+            <div class="card-title">Parse & Normalize</div>
+            <div class="card-sub">แปลงเป็น standard JSON</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>อ่าน binary → แปลงเป็น session records</li>
+            <li>Normalize เป็น format กลาง (ไม่ขึ้นกับแบรนด์)</li>
+            <li>คำนวณ AHI, compliance %, 95th percentile pressure</li>
+            <li>แนบ metadata: device serial, firmware, date range</li>
+          </ul>
+          <span class="badge badge-blue">output: JSON</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">↓</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-purple">4️⃣</div>
+          <div>
+            <div class="card-title">ยืนยันตัวตน + เลือกคนไข้</div>
+            <div class="card-sub">match patient before upload</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>Bridge เปิด mini UI ใน browser</li>
+            <li>แสดง preview ข้อมูล: กี่ session, date range, device</li>
+            <li>ค้นหาคนไข้ในระบบ (ชื่อ / HN / serial เครื่อง)</li>
+            <li>ยืนยัน → กด "Upload"</li>
+          </ul>
+          <span class="badge badge-yellow">ป้องกันโหลดข้อมูลผิดคน</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">↓</div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-blue">5️⃣</div>
+          <div>
+            <div class="card-title">Upload ขึ้น Cloud</div>
+            <div class="card-sub">HTTPS → API</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>POST JSON payload ไปยัง <span class="mono">api.skylinemedical.co.th</span></li>
+            <li>JWT token ของ uploader แนบใน header</li>
+            <li>รองรับ offline: ถ้าไม่มีเน็ต → queue ไว้ upload ทีหลัง</li>
+            <li>แสดง progress bar + ผลลัพธ์</li>
+          </ul>
+          <span class="badge badge-green">incremental sync (ไม่โหลดซ้ำ)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SD CARD PARSER -->
+  <div id="parser" class="flow-section">
+    <div class="phase-label">04 — Parser</div>
+    <div class="section-title">SD Card Parser — แต่ละแบรนด์</div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Brand / Device</th>
+          <th>Format</th>
+          <th>Folder Structure</th>
+          <th>สถานะ</th>
+          <th>ความยาก</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>APEX iX Auto</strong></td>
+          <td><span class="mono">.SAP</span> binary</td>
+          <td><span class="mono">DATALOG/YYYYMMDD.SAP</span></td>
+          <td><span class="badge badge-green">✓ พร้อมแล้ว</span></td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><strong>APEX XT Auto</strong></td>
+          <td><span class="mono">.SAP</span> binary</td>
+          <td>คล้าย iX Auto</td>
+          <td><span class="badge badge-yellow">ต้องทดสอบ</span></td>
+          <td>⭐⭐</td>
+        </tr>
+        <tr>
+          <td><strong>Beyond ResFree R-20i</strong></td>
+          <td><span class="mono">.bin</span> binary</td>
+          <td><span class="mono">RECORD/</span></td>
+          <td><span class="badge badge-yellow">ต้อง reverse engineer</span></td>
+          <td>⭐⭐⭐</td>
+        </tr>
+        <tr>
+          <td><strong>Beyond ResFree R-30F</strong></td>
+          <td><span class="mono">.bin</span> binary</td>
+          <td><span class="mono">RECORD/</span></td>
+          <td><span class="badge badge-yellow">ต้อง reverse engineer</span></td>
+          <td>⭐⭐⭐</td>
+        </tr>
+        <tr>
+          <td><strong>ResMed AirSense 10/11</strong></td>
+          <td>EDF / STR.edf</td>
+          <td><span class="mono">SETTINGS/ + DATALOG/</span></td>
+          <td><span class="badge badge-red">ซับซ้อน / licensed</span></td>
+          <td>⭐⭐⭐⭐</td>
+        </tr>
+        <tr>
+          <td><strong>Philips DreamStation</strong></td>
+          <td>Proprietary</td>
+          <td>—</td>
+          <td><span class="badge badge-red">ยากมาก</span></td>
+          <td>⭐⭐⭐⭐⭐</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note-box warn">
+      <div class="note-icon">⚠️</div>
+      <div class="note-text"><strong>Beyond .bin format:</strong> ต้องได้ SD Card จริงเพื่อ reverse engineer — ถ้า Beyond Medical ให้ documentation ได้จะเร็วกว่ามาก ควรถามใน business meeting ครั้งหน้า</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- CLOUD API -->
+  <div id="api" class="flow-section">
+    <div class="phase-label">05 — Cloud API</div>
+    <div class="section-title">Cloud API — Endpoints หลัก</div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Method</th>
+          <th>ใครเรียก</th>
+          <th>ทำอะไร</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="mono">/cpap/upload</span></td>
+          <td><span class="badge badge-blue">POST</span></td>
+          <td>Bridge</td>
+          <td>รับ session data JSON จาก bridge + save ลง DB</td>
+        </tr>
+        <tr>
+          <td><span class="mono">/patients</span></td>
+          <td><span class="badge badge-blue">GET</span></td>
+          <td>Bridge / Portal</td>
+          <td>ค้นหาคนไข้ (ชื่อ / HN / serial)</td>
+        </tr>
+        <tr>
+          <td><span class="mono">/patients/:id/sessions</span></td>
+          <td><span class="badge badge-blue">GET</span></td>
+          <td>Portal (หมอ)</td>
+          <td>ดู session history ของคนไข้คนนั้น</td>
+        </tr>
+        <tr>
+          <td><span class="mono">/patients/:id/summary</span></td>
+          <td><span class="badge badge-blue">GET</span></td>
+          <td>Portal (คนไข้)</td>
+          <td>สรุป AHI, compliance เฉลี่ย 30/90 วัน</td>
+        </tr>
+        <tr>
+          <td><span class="mono">/hospitals/:id/overview</span></td>
+          <td><span class="badge badge-blue">GET</span></td>
+          <td>Portal (หมอ / admin)</td>
+          <td>dashboard ภาพรวม รพ.</td>
+        </tr>
+        <tr>
+          <td><span class="mono">/admin/dashboard</span></td>
+          <td><span class="badge badge-blue">GET</span></td>
+          <td>Skyline</td>
+          <td>ทุก รพ. รวมกัน, fleet overview</td>
+        </tr>
+        <tr>
+          <td><span class="mono">/auth/login</span></td>
+          <td><span class="badge badge-yellow">POST</span></td>
+          <td>ทุก role</td>
+          <td>JWT token</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- WEB PORTAL -->
+  <div id="portal" class="flow-section">
+    <div class="phase-label">06 — Web Portal</div>
+    <div class="section-title">Web Portal — แต่ละ Role เห็นอะไร</div>
+
+    <div class="flow-grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-blue">🧑‍⚕️</div>
+          <div>
+            <div class="card-title">Doctor View</div>
+            <div class="card-sub">login ด้วย account รพ.</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>รายชื่อคนไข้ทั้งหมดของ รพ.</li>
+            <li>AHI trend graph (รายคืน)</li>
+            <li>Compliance % 30 วัน</li>
+            <li>95th percentile pressure</li>
+            <li>Leak rate</li>
+            <li>แจ้งเตือนถ้า AHI สูงผิดปกติ</li>
+            <li>Export PDF report</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-green">😴</div>
+          <div>
+            <div class="card-title">Patient View</div>
+            <div class="card-sub">login ด้วย HN หรือ OTP</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>สรุปคืนล่าสุด (ภาษาไทยเข้าใจง่าย)</li>
+            <li>Compliance ของตัวเอง</li>
+            <li>กราฟ AHI ย้อนหลัง</li>
+            <li>คำแนะนำพื้นฐาน (ถ้า AHI สูง)</li>
+            <li>ไม่เห็นข้อมูลดิบ / clinical ซับซ้อน</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-yellow">🏥</div>
+          <div>
+            <div class="card-title">Hospital Admin</div>
+            <div class="card-sub">เจ้าหน้าที่ รพ.</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>จัดการคนไข้ (เพิ่ม / แก้ไข HN)</li>
+            <li>ดู upload history</li>
+            <li>ดู device inventory ที่ให้ยืม</li>
+            <li>ส่ง SD Card data ใหม่</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-purple">📊</div>
+          <div>
+            <div class="card-title">Skyline Dashboard</div>
+            <div class="card-sub">internal use</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <ul>
+            <li>ภาพรวมทุก รพ.</li>
+            <li>จำนวน device active / inactive</li>
+            <li>Compliance rate เฉลี่ยรายโรงพยาบาล</li>
+            <li>Alert คนไข้ที่ไม่ compliance (follow-up)</li>
+            <li>Revenue linkage (ต่อยอดได้)</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- DATABASE -->
+  <div id="db" class="flow-section">
+    <div class="phase-label">07 — Database</div>
+    <div class="section-title">Database Schema (หลัก)</div>
+
+    <div class="data-flow">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;font-size:12px;">
+
+        <div>
+          <div style="color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:8px;text-transform:uppercase;">patients</div>
+          <div class="card-body">
+            <ul>
+              <li><span class="mono">id, hn, name</span></li>
+              <li><span class="mono">hospital_id</span></li>
+              <li><span class="mono">dob, gender</span></li>
+              <li><span class="mono">diagnosis (OSA/CSA)</span></li>
+              <li><span class="mono">device_serial</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div style="color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:8px;text-transform:uppercase;">sessions</div>
+          <div class="card-body">
+            <ul>
+              <li><span class="mono">id, patient_id</span></li>
+              <li><span class="mono">date, duration_min</span></li>
+              <li><span class="mono">ahi, compliance</span></li>
+              <li><span class="mono">p95_pressure</span></li>
+              <li><span class="mono">leak_lpm</span></li>
+              <li><span class="mono">brand, raw_json</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div>
+          <div style="color:var(--yellow);font-family:'IBM Plex Mono',monospace;font-size:11px;margin-bottom:8px;text-transform:uppercase;">uploads</div>
+          <div class="card-body">
+            <ul>
+              <li><span class="mono">id, patient_id</span></li>
+              <li><span class="mono">uploaded_by</span></li>
+              <li><span class="mono">uploaded_at</span></li>
+              <li><span class="mono">device_brand</span></li>
+              <li><span class="mono">session_count</span></li>
+              <li><span class="mono">status</span></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- BUILD PHASES -->
+  <div id="phases" class="flow-section">
+    <div class="phase-label">08 — Roadmap</div>
+    <div class="section-title">Build Phases</div>
+
+    <div class="phase-bar">
+      <div class="phase-item active">
+        <div class="phase-num">Phase 1</div>
+        <div class="phase-name">Bridge + APEX</div>
+        <div class="phase-desc">SD Card detect + SAP parser + upload API</div>
+        <div style="margin-top:8px"><span class="badge badge-green">~2–3 สัปดาห์</span></div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">Phase 2</div>
+        <div class="phase-name">Doctor Portal</div>
+        <div class="phase-desc">Web UI สำหรับหมอ + patient list + AHI graph</div>
+        <div style="margin-top:8px"><span class="badge badge-blue">~2–3 สัปดาห์</span></div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">Phase 3</div>
+        <div class="phase-name">Beyond Parser</div>
+        <div class="phase-desc">Reverse engineer .bin format + normalize</div>
+        <div style="margin-top:8px"><span class="badge badge-yellow">~1–2 สัปดาห์ (ขึ้นกับ format)</span></div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">Phase 4</div>
+        <div class="phase-name">Patient Portal</div>
+        <div class="phase-desc">คนไข้ดูข้อมูลตัวเอง + Skyline dashboard</div>
+        <div style="margin-top:8px"><span class="badge badge-blue">~2 สัปดาห์</span></div>
+      </div>
+      <div class="phase-item">
+        <div class="phase-num">Phase 5</div>
+        <div class="phase-name">Scale</div>
+        <div class="phase-desc">ResMed/Philips parser + mobile view</div>
+        <div style="margin-top:8px"><span class="badge badge-purple">TBD</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- RISKS -->
+  <div id="risks" class="flow-section">
+    <div class="phase-label">09 — Risks</div>
+    <div class="section-title">ความเสี่ยงและสิ่งต้องระวัง</div>
+
+    <div class="note-box warn">
+      <div class="note-icon">⚠️</div>
+      <div class="note-text"><strong>Beyond .bin format ไม่เปิดเผย:</strong> ต้องใช้เวลา reverse engineer หรือขอ documentation จาก Beyond Medical โดยตรง — ควรถามในการประชุมครั้งหน้า</div>
+    </div>
+
+    <div class="note-box warn">
+      <div class="note-icon">⚠️</div>
+      <div class="note-text"><strong>PDPA (พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล):</strong> ข้อมูลสุขภาพเป็น sensitive data — ต้องมี consent form, data retention policy, และ security audit ก่อน go-live กับ รพ. จริง</div>
+    </div>
+
+    <div class="note-box warn">
+      <div class="note-icon">⚠️</div>
+      <div class="note-text"><strong>Patient matching:</strong> ถ้า match ผิดคน = ข้อมูลผิดคนไข้ — ต้องออกแบบ UI ให้ยืนยันชัดเจนก่อน upload ทุกครั้ง</div>
+    </div>
+
+    <div class="note-box info">
+      <div class="note-icon">💡</div>
+      <div class="note-text"><strong>ข้อได้เปรียบของ Skyline:</strong> เป็นเจ้าเดียวที่มี APEX SAP parser ที่ทำงานได้จริง — ถ้าพัฒนา platform นี้ได้ จะเป็น differentiator ที่แข่งขันได้ยากมากในตลาด รพ. ไทย</div>
+    </div>
+
+    <div class="note-box success">
+      <div class="note-icon">✅</div>
+      <div class="note-text"><strong>สิ่งที่มีอยู่แล้ว:</strong> APEX SAP parser, Skyline Plus API infrastructure (.NET), JWT auth pattern, patient/device data model — Phase 1 เริ่มได้เลยโดยไม่ต้อง build from scratch</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;color:var(--muted);font-size:11px;font-family:'IBM Plex Mono',monospace;margin-top:40px;padding-top:20px;border-top:1px solid var(--border)">
+    Skyline Medical Co., Ltd. — Internal Architecture Document — 2026
+  </div>
+
+</div>
+</body>
+</html>
