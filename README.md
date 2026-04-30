@@ -30,7 +30,7 @@
 - PDPA/Sensitive health data compliance
 - ความสามารถทำงานต่อเนื่องเมื่อ offline และ sync ภายหลัง
 
-## สรุปแนวคิดแบรนด์ HYPNOS CIRCADIAN LAB (จากภาพที่แนบ)
+## สรุปแนวคิดแบรนด์ HYPNOS CIRCADIAN LAB
 
 - **ที่มาชื่อแบรนด์**
   - **Hypnos** มาจากเทพแห่งการนอนหลับ สื่อถึงการพักผ่อนและการฟื้นฟู
